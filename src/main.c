@@ -1,5 +1,6 @@
 #include <stdio.h>
+#include "../lib/error_functions.h"
 
 int main(int argc, char **argv){
-    printf("%s\n", "Hello World!");
+    errMsg("%s\n", "Test Message");
 }

@@ -39,4 +39,7 @@ all: $(BIN_DIR) $(TARGET)
 clean:
 	rm -r $(BIN_DIR) $(BUILD_DIR)
 
-.PHONY: all clean
+run:
+	./bin/test
+
+.PHONY: all clean run
