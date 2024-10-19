@@ -29,7 +29,7 @@ main(int argc, char **argv){
 	filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 	outputFd = open(argv[2], openFlags, filePerms);
 	if(outputFd == -1)
-		errExit("opening file %s", argv[1]);
+		errExit(argv[2], openFlags, filePerms);
 
 	while((numRead = read(inputFd, buf, BUF_SIZE)) > 0)
 		if(write(outputFd, buf, numRead) != numRead)
@@ -44,5 +44,7 @@ main(int argc, char **argv){
 	}
 
 	exit(EXIT_SUCCESS);
+
+
 	return 0;
 }
