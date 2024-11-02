@@ -31,7 +31,28 @@ main(int argc, char **argv){
     char buf[buf_size]; 
     int numRead = 0;
     while((numRead = read(inputFd, buf, buf_size)) > 0){
-       
+       // we are trying to create the holes that is present in the original file
+       // so when we encounter any 0 values when need to seek at the end of the 0 sequence to create holes
+       // we do this until we reach EOF in the input file
+
+       // the bytes could be like XX XX XX XX 00 00 00 XX 00 00 00 EOF
+       int buf_ptr = 0;
+       int last_write_ptr = 0;
+       while(buf_ptr < numRead){
+           for(; buf[buf_ptr] != 0 && buf_ptr < numRead; buf_ptr++){}
+           int bytes_to_write = buf_ptr - last_write_ptr;
+           if(write(outputFd, buf + last_write_ptr, bytes_to_write) != bytes_to_write)
+               fatal("problem encountered in writing the buffer");
+           last_write_ptr = buf_ptr;
+           
+           // we have stopped at the first encounter of 00
+           // we need to increment the buf_ptr until we reach the end of the 00 sequence
+           for(; buf[buf_ptr] == 0 && buf_ptr < numRead; buf_ptr++){}
+           // now we will seek until the end of 00 sequence
+           if(lseek(outputFd, buf_ptr - last_write_ptr, SEEK_CUR) == -1)
+               errExit("lseek");
+           last_write_ptr = buf_ptr;
+       }
     } 
 
     if(numRead == -1)
