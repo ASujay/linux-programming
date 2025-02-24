@@ -1,8 +1,14 @@
 # Compiler
-CC=gcc
+CC = zig cc
+
+# Target Architecture
+TARGET_ARCH = x86_64-linux-musl 
 
 # Compiler flags
-CFLAGS= -Wall -Wextra 
+CFLAGS = -Wall -Wextra -target $(TARGET_ARCH) 
+
+# Linker flags
+LDFLAGS = -target $(TARGET_ARCH)
 
 # Directories
 SRC_DIR = ./src
@@ -40,6 +46,6 @@ clean:
 	rm -r $(BIN_DIR) $(BUILD_DIR)
 
 run:
-	./bin/test
+	qemu-x86_64 ./bin/test
 
 .PHONY: all clean run
