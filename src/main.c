@@ -1,61 +1,52 @@
-#include <stdbool.h>
-#include <string.h>
+#include <stdio.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/uio.h>
 #include <fcntl.h>
-#include <ctype.h>
-#include <unistd.h>
-#include "../lib/error_functions.h"
 #include "../lib/tlpi_hdr.h"
 
-int 
-main(int argc, char **argv){
-    bool shouldAppend = false; 
-    char *file;
-    // first we check if the command was issued correctly
-    if(argc < 2 || strcmp(argv[1], "--help") == 0)
-        usageErr("%s new-file\n", argv[0]);  
-    else if(argc == 3){
-        if(strcmp(argv[1], "-a") != 0){
-            usageErr("invalid command!\n%s new-file\n", argv[0]);
-        }
-        shouldAppend = true;
-        file = argv[2];
-    } else {
-        file = argv[1];
-    }
-    int outputFd, openFlags;
-    mode_t filePerms;
-    if(shouldAppend){
-        openFlags = O_APPEND | O_CREAT | O_WRONLY;
-    } else {
-        openFlags = O_CREAT | O_WRONLY | O_TRUNC;
-    }
-    filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+#define STR_SIZE 100
 
-    outputFd = open(file, openFlags, filePerms);
-    if(outputFd == -1)
-        errExit("Opening file %s\n", file);
+int main(int argc, char **argv){
+    int fd;
+    struct iovec iov[3];
+    struct stat myStruct;           // first buffer
+    int x;                          // second buffer
+    char str[STR_SIZE];
 
-    // now we try to read the file
-    int buf_size = 1024;
-    char buf[buf_size]; 
-    int numRead = 0;
-    while((numRead = read(STDIN_FILENO, buf, buf_size)) > 0){
-        //if the read is successful we now try to write to stdout and the file
-        if(write(STDOUT_FILENO, buf, numRead) != numRead){
-            fatal("couldn't write to the stdout!");
-        }
+    ssize_t numRead, totRequired;
 
-        if(write(outputFd, buf, numRead) != numRead){
-            fatal("couldn't write to the stdout!");
-        }
-    } 
 
-    if(numRead == -1)
-        errExit("read");
+    if(argc != 2 || strcmp(argv[1], "--help") == 0)
+        usageErr("%s file\n", argv[0]);
+
+    fd = open(argv[1], O_RDONLY);
+    if(fd == -1)
+        errExit("open");
+
+    totRequired = 0;
+
+    iov[0].iov_base = &myStruct;
+    iov[0].iov_len = sizeof(struct stat);
+    totRequired += iov[0].iov_len;
+
+    iov[1].iov_base = &x;
+    iov[1].iov_len = sizeof(x);
+    totRequired += iov[1].iov_len;
     
-    if(close(outputFd) == -1)
-        errExit("Close output");
+    iov[2].iov_base = str;
+    iov[2].iov_len = STR_SIZE;
+    totRequired += iov[2].iov_len;
+    
+    numRead = read(fd, iov, 3);
+    if(numRead == -1)
+        errExit("readv");
 
+    if(numRead < totRequired)
+        printf("Read fewer bytes that required\n");
+
+    printf("total bytes requested: %ld; bytes read: %ld\n",
+            (long)totRequired, (long)numRead);
+   
     exit(EXIT_SUCCESS);
 }

@@ -9,6 +9,8 @@ __attribute__ ((__noreturn__))
 static void
 terminate(Boolean useExit3)
 {
+    // useExit3 is true then we flush the buffers and run destructors
+
     char *s;
     /* Dump core if EF_DUMPCORE environment variable is defined and
     is a nonempty string; otherwise call exit(3) or _exit(2),
@@ -59,7 +61,7 @@ outputError(
     // there could be an error here so the errno can change
     if(flushStdout)
         fflush(stdout);         // flush any pending stdout
-    fputs(buf, stderr);
+    fputs(buf, stderr);         // these functions can set the errno
     fflush(stderr); 
 }
 
